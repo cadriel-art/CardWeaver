@@ -1,0 +1,2428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elemental Card Generator | 77 Palettes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Default Active Colors - these will be overridden by JS */
+            --active-color-1: #dd8448;
+            --active-color-2: #ff9d66;
+            --active-color-3: #ff6b35;
+            --active-glow: rgba(221, 132, 72, 0.5);
+            
+            /* Base */
+            --cyan: #00f0ff;
+            --dark-bg: #0a0a0f;
+            --card-bg: #12121a;
+            --text: #fafafa;
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(221, 132, 72, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(221, 132, 72, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .grid-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, var(--dark-bg) 70%);
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            padding: 15px 40px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid rgba(221, 132, 72, 0.2);
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #dd8448 0%, #ff9d66 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links { display: flex; gap: 30px; }
+
+        .nav-link {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover { color: #dd8448; }
+
+        /* Hero */
+        .hero {
+            min-height: 50vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 40px 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .glitch {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 56px;
+            font-weight: 900;
+            color: var(--text);
+            text-shadow: 0 0 10px rgba(221, 132, 72, 0.5);
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 20px auto 0;
+            line-height: 1.8;
+        }
+
+        /* Sections */
+        .section {
+            padding: 60px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .section-tag::before { content: '< '; }
+        .section-tag::after { content: ' />'; }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text) 0%, #dd8448 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Generator Layout */
+        .generator-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        /* Card Preview */
+        .preview-area {
+            background: rgba(18, 18, 26, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 620px;
+        }
+
+        .preview-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        .card-preview-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: rgba(18, 18, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            max-height: 680px;
+            overflow-y: auto;
+        }
+
+        .control-panel::-webkit-scrollbar { width: 6px; }
+        .control-panel::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        .control-panel::-webkit-scrollbar-thumb { background: rgba(221, 132, 72, 0.4); border-radius: 3px; }
+
+        .control-section { margin-bottom: 25px; }
+
+        .control-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Element Selector */
+        .element-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .element-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .element-btn:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .element-btn.active {
+            border-color: var(--active-color-1);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px var(--active-glow);
+        }
+
+        .element-icon { font-size: 20px; }
+        .element-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Color Palette Picker */
+        .palette-container {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .palette-container::-webkit-scrollbar { width: 6px; }
+        .palette-container::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        .palette-container::-webkit-scrollbar-thumb { background: rgba(221, 132, 72, 0.4); border-radius: 3px; }
+
+        .palette-group { margin-bottom: 12px; }
+
+        .palette-group-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .palette-group-name:hover { color: var(--text); }
+
+        .palette-colors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.3);
+            z-index: 10;
+        }
+
+        .color-swatch.selected {
+            border-color: white;
+            box-shadow: 0 0 15px var(--active-color-1);
+            transform: scale(1.2);
+        }
+
+        .color-swatch.glowing { animation: swatchGlow 2s ease-in-out infinite alternate; }
+
+        @keyframes swatchGlow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.4); }
+        }
+
+        /* Selected Color Display */
+        .selected-color-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+
+        .selected-color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .selected-color-info {
+            flex: 1;
+        }
+
+        .selected-color-hex {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .selected-color-name {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Toggle Grid */
+        .toggle-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-item:hover { background: rgba(255, 255, 255, 0.06); }
+        .toggle-item-label { font-size: 12px; color: var(--text-muted); }
+
+        .toggle-switch {
+            width: 40px;
+            height: 22px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 11px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-item.active .toggle-switch { background: var(--active-color-1); }
+        .toggle-item.active .toggle-switch::after { left: 21px; background: white; }
+
+        /* Input Groups */
+        .input-group { margin-bottom: 8px; }
+
+        .custom-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .custom-input:focus {
+            border-color: var(--active-color-1);
+            box-shadow: 0 0 10px var(--active-glow);
+        }
+
+        .custom-input::placeholder { color: var(--text-muted); }
+
+        /* Generate Button */
+        .generate-btn {
+            width: 100%;
+            padding: 16px 30px;
+            background: linear-gradient(135deg, var(--active-color-1) 0%, var(--active-color-2) 100%);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-bg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .generate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .generate-btn:hover::before { left: 100%; }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px var(--active-glow);
+        }
+
+        /* ============================================
+           ELEMENTAL CARD - PREVIEW VERSION
+           ============================================ */
+
+        .elemental-card {
+            position: relative;
+            width: 380px;
+            height: 480px;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .elemental-card:hover { transform: translateY(-15px); }
+
+        /* Card Frame - Uses CSS Variables */
+        .card-frame {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 3px;
+            background: linear-gradient(135deg, var(--active-color-1), var(--active-color-2));
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated Border */
+        .border-animation {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .border-animation::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: conic-gradient(from 0deg, transparent, var(--active-color-1), var(--active-color-2), transparent);
+            animation: rotate-border 4s linear infinite;
+        }
+
+        @keyframes rotate-border {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .border-animation::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+        }
+
+        /* Glow Container */
+        .glow-container {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.6;
+            background: var(--active-color-1);
+            transition: all 0.5s ease;
+        }
+
+        .glow-orb-1 { width: 150px; height: 150px; top: -30px; right: -30px; background: var(--active-color-2); }
+        .glow-orb-2 { width: 120px; height: 120px; bottom: -20px; left: -20px; background: var(--active-color-1); }
+        .glow-orb-3 { width: 80px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--active-color-3); }
+
+        /* Glow Animations per Element Type */
+        .elemental-card[data-element="fire"] .glow-orb-1 { animation: fire-pulse-1 2s ease-in-out infinite; }
+        .elemental-card[data-element="fire"] .glow-orb-2 { animation: fire-pulse-2 2.5s ease-in-out infinite; }
+        .elemental-card[data-element="fire"] .glow-orb-3 { animation: fire-pulse-3 1.5s ease-in-out infinite; }
+
+        @keyframes fire-pulse-1 {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(1.2); }
+        }
+
+        @keyframes fire-pulse-2 {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.3); }
+        }
+
+        @keyframes fire-pulse-3 {
+            0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.4); }
+        }
+
+        .elemental-card[data-element="water"] .glow-orb-1 { animation: water-float-1 4s ease-in-out infinite; }
+        .elemental-card[data-element="water"] .glow-orb-2 { animation: water-float-2 5s ease-in-out infinite; }
+        .elemental-card[data-element="water"] .glow-orb-3 { animation: water-float-3 3.5s ease-in-out infinite; }
+
+        @keyframes water-float-1 {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-10px) translateX(5px); }
+            50% { transform: translateY(0) translateX(10px); }
+            75% { transform: translateY(10px) translateX(5px); }
+        }
+
+        @keyframes water-float-2 {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            33% { transform: translateY(15px) translateX(-10px); }
+            66% { transform: translateY(-10px) translateX(5px); }
+        }
+
+        @keyframes water-float-3 {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+        }
+
+        .elemental-card[data-element="alien"] .glow-orb-1 { animation: alien-morph-1 3s ease-in-out infinite; }
+        .elemental-card[data-element="alien"] .glow-orb-2 { animation: alien-morph-2 4s ease-in-out infinite; }
+        .elemental-card[data-element="alien"] .glow-orb-3 { animation: alien-morph-3 2.5s ease-in-out infinite; }
+
+        @keyframes alien-morph-1 {
+            0%, 100% { border-radius: 50%; transform: scale(1) rotate(0deg); }
+            25% { border-radius: 40% 60% 70% 30%; transform: scale(1.1) rotate(90deg); }
+            50% { border-radius: 60% 40% 30% 70%; transform: scale(0.9) rotate(180deg); }
+            75% { border-radius: 30% 70% 50% 50%; transform: scale(1.05) rotate(270deg); }
+        }
+
+        @keyframes alien-morph-2 {
+            0%, 100% { border-radius: 50%; transform: scale(1); filter: hue-rotate(0deg); }
+            50% { border-radius: 70% 30% 50% 50%; transform: scale(1.2); filter: hue-rotate(60deg); }
+        }
+
+        @keyframes alien-morph-3 {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); filter: hue-rotate(0deg) brightness(1); }
+            33% { transform: translate(-50%, -50%) scale(1.5); filter: hue-rotate(120deg) brightness(1.5); }
+            66% { transform: translate(-50%, -50%) scale(0.8); filter: hue-rotate(240deg) brightness(0.8); }
+        }
+
+        /* Fire Wave */
+        .fire-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to top, var(--active-glow), transparent);
+            animation: fire-wave-move 2s ease-in-out infinite;
+            filter: blur(10px);
+            display: none;
+        }
+
+        .elemental-card[data-element="fire"] .fire-wave { display: block; }
+
+        @keyframes fire-wave-move {
+            0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.5; }
+            50% { transform: translateY(-20px) scaleY(1.2); opacity: 0.8; }
+        }
+
+        /* Water Ripples */
+        .water-ripples {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: 20px;
+            display: none;
+        }
+
+        .elemental-card[data-element="water"] .water-ripples { display: block; }
+
+        .ripple {
+            position: absolute;
+            border: 2px solid var(--active-color-1);
+            border-radius: 50%;
+            opacity: 0;
+            animation: ripple-expand 3s ease-out infinite;
+        }
+
+        @keyframes ripple-expand {
+            0% { width: 0; height: 0; opacity: 0.8; transform: translate(-50%, -50%); }
+            100% { width: 300px; height: 300px; opacity: 0; transform: translate(-50%, -50%); }
+        }
+
+        /* Alien Portal */
+        .alien-portal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, transparent 30%, var(--active-glow) 50%, transparent 90%);
+            animation: portal-spin 8s linear infinite;
+            display: none;
+        }
+
+        .elemental-card[data-element="alien"] .alien-portal { display: block; }
+
+        .alien-portal::before,
+        .alien-portal::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border: 1px solid transparent;
+            border-radius: 50%;
+            border-top-color: var(--active-color-2);
+            border-bottom-color: var(--active-color-3);
+            animation: portal-ring 3s linear infinite;
+        }
+
+        .alien-portal::after {
+            inset: -25px;
+            animation-direction: reverse;
+            animation-duration: 4s;
+        }
+
+        @keyframes portal-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes portal-ring {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Filter Layer */
+        .filter-layer {
+            position: absolute;
+            inset: 0;
+            border: 3px solid var(--active-color-1);
+            border-radius: 20px;
+            box-shadow: 0 0 20px var(--active-glow), inset 0 0 20px var(--active-glow);
+            transition: all 0.5s ease;
+        }
+
+        .elemental-card[data-element="alien"] .filter-layer {
+            animation: alien-border-shift 3s ease-in-out infinite;
+        }
+
+        @keyframes alien-border-shift {
+            0%, 100% { border-color: var(--active-color-1); box-shadow: 0 0 20px var(--active-glow); }
+            33% { border-color: var(--active-color-2); box-shadow: 0 0 20px var(--active-color-2); }
+            66% { border-color: var(--active-color-3); box-shadow: 0 0 20px var(--active-color-3); }
+        }
+
+        /* Chromatic Layer */
+        .chromatic-layer {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .chromatic-layer.active {
+            opacity: 1;
+            animation: chromatic-shift 2s ease-in-out infinite;
+        }
+
+        @keyframes chromatic-shift {
+            0%, 100% { box-shadow: -2px 0 var(--active-color-3), 2px 0 var(--active-color-2); }
+            50% { box-shadow: -4px 0 var(--active-color-2), 4px 0 var(--active-color-3); }
+        }
+
+        /* Particle Containers */
+        .element-particles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: 20px;
+        }
+
+        /* Electric Particles */
+        .electric-particles .particle {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background: linear-gradient(to bottom, var(--active-color-1), transparent);
+            animation: electric-particle 0.5s linear infinite;
+        }
+
+        @keyframes electric-particle {
+            0% { opacity: 1; transform: translateY(0) scaleY(1); }
+            100% { opacity: 0; transform: translateY(20px) scaleY(0.5); }
+        }
+
+        /* Fire Embers */
+        .fire-particles .ember {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--active-color-2);
+            border-radius: 50%;
+            bottom: 0;
+            animation: ember-rise 3s ease-out infinite;
+            box-shadow: 0 0 6px var(--active-color-2), 0 0 12px var(--active-color-1);
+        }
+
+        @keyframes ember-rise {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-400px) scale(0); }
+        }
+
+        /* Water Bubbles */
+        .water-particles .bubble {
+            position: absolute;
+            border: 1px solid var(--active-color-2);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent);
+            animation: bubble-rise 4s ease-in-out infinite;
+        }
+
+        @keyframes bubble-rise {
+            0% { opacity: 0; transform: translateY(100%) scale(0.5); }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-100%) scale(1); }
+        }
+
+        /* Alien Spores */
+        .alien-particles .spore {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--active-color-2);
+            border-radius: 50%;
+            animation: spore-float 5s ease-in-out infinite;
+            box-shadow: 0 0 10px var(--active-color-2), 0 0 20px var(--active-color-1);
+        }
+
+        @keyframes spore-float {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+            25% { transform: translate(30px, -50px) scale(1.2); opacity: 1; }
+            50% { transform: translate(-20px, -100px) scale(0.8); opacity: 0.6; }
+            75% { transform: translate(40px, -150px) scale(1.1); opacity: 0.4; }
+        }
+
+        /* Card Content */
+        .content-container {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            z-index: 100;
+        }
+
+        .content-top { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+        .content-bottom { display: flex; flex-direction: column; gap: 10px; }
+
+        .card-category {
+            background: var(--active-glow);
+            border: 1px solid var(--active-color-1);
+            border-radius: 20px;
+            width: fit-content;
+            padding: 6px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--active-color-1);
+            transition: all 0.5s ease;
+        }
+
+        .card-app-type {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--active-color-1);
+            transition: color 0.5s ease;
+        }
+
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.2;
+            margin-top: auto;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background: var(--active-glow);
+            border: 1px solid var(--active-color-1);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--active-color-2);
+            transition: all 0.3s ease;
+        }
+
+        /* ============================================
+           OUTPUT SECTION
+           ============================================ */
+        .output-section {
+            background: linear-gradient(180deg, rgba(10, 10, 15, 0.9) 0%, rgba(18, 18, 26, 0.9) 100%);
+            border-top: 1px solid rgba(221, 132, 72, 0.2);
+        }
+
+        .docs-intro {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .docs-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .docs-tab {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .docs-tab:hover { border-color: rgba(221, 132, 72, 0.3); color: var(--text); }
+
+        .docs-tab.active {
+            background: rgba(221, 132, 72, 0.1);
+            border-color: #dd8448;
+            color: #dd8448;
+        }
+
+        .docs-panel { display: none; }
+        .docs-panel.active { display: block; }
+
+        .full-code-card {
+            background: rgba(18, 18, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .doc-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .doc-card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: rgba(221, 132, 72, 0.1);
+            border: 1px solid rgba(221, 132, 72, 0.3);
+            color: #dd8448;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-btn:hover {
+            background: rgba(221, 132, 72, 0.2);
+            border-color: #dd8448;
+            transform: translateY(-2px);
+        }
+
+        .copy-btn.copied {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+        }
+
+        .copy-btn svg { width: 14px; height: 14px; }
+
+        .doc-card-content {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .doc-card-content::-webkit-scrollbar { width: 6px; }
+        .doc-card-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        .doc-card-content::-webkit-scrollbar-thumb { background: rgba(221, 132, 72, 0.4); border-radius: 3px; }
+
+        .code-block {
+            background: #0d0d12;
+            padding: 20px;
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            color: #a0a0a0;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .code-block .tag { color: #ff79c6; }
+        .code-block .attr { color: #50fa7b; }
+        .code-block .value { color: #f1fa8c; }
+        .code-block .comment { color: #6272a4; }
+        .code-block .property { color: #8be9fd; }
+        .code-block .selector { color: #ff79c6; }
+
+        /* Footer */
+        .footer {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid rgba(221, 132, 72, 0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #dd8448 0%, #ff9d66 100%);
+            color: var(--dark-bg);
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 10000;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show { transform: translateX(0); opacity: 1; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .generator-container { grid-template-columns: 1fr; }
+            .preview-area { min-height: auto; padding: 30px; }
+            .control-panel { max-height: none; }
+        }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 10px 20px; gap: 20px; width: 90%; }
+            .nav-links { gap: 15px; }
+            .glitch { font-size: 36px; }
+            .section { padding: 40px 20px; }
+            .elemental-card { width: 100%; max-width: 380px; }
+            .element-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark-bg); }
+        ::-webkit-scrollbar-thumb { background: #dd8448; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">CARD GEN</div>
+        <div class="nav-links">
+            <a href="#generator" class="nav-link">Generator</a>
+            <a href="#output" class="nav-link">Code Output</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1 class="glitch">Elemental Card Generator</h1>
+        <p class="hero-description">
+            Create stunning animated cards with 77 color palettes, 4 elemental effects, 
+            and complete code export. <strong>Select a color to apply it live!</strong>
+        </p>
+    </section>
+
+    <!-- Generator Section -->
+    <section class="section" id="generator">
+        <div class="section-header">
+            <span class="section-tag">customize</span>
+            <h2 class="section-title">Card Generator</h2>
+        </div>
+
+        <div class="generator-container">
+            <!-- Card Preview -->
+            <div class="preview-area">
+                <div class="preview-label">Live Preview • Colors Apply Instantly</div>
+                <div class="card-preview-wrapper">
+                    <div class="elemental-card" id="previewCard" data-element="electric">
+                        <!-- Frame -->
+                        <div class="card-frame">
+                            <div class="card-inner"></div>
+                        </div>
+
+                        <!-- Border Animation -->
+                        <div class="border-animation" id="borderAnimation"></div>
+
+                        <!-- Glow Container -->
+                        <div class="glow-container" id="glowContainer">
+                            <div class="glow-orb glow-orb-1"></div>
+                            <div class="glow-orb glow-orb-2"></div>
+                            <div class="glow-orb glow-orb-3"></div>
+                            <div class="fire-wave"></div>
+                            <div class="water-ripples" id="waterRipples"></div>
+                            <div class="alien-portal"></div>
+                        </div>
+
+                        <!-- Filter Layer -->
+                        <div class="filter-layer" id="filterLayer"></div>
+
+                        <!-- Chromatic Layer -->
+                        <div class="chromatic-layer" id="chromaticLayer"></div>
+
+                        <!-- Particles -->
+                        <div class="element-particles" id="particlesContainer"></div>
+
+                        <!-- Content -->
+                        <div class="content-container">
+                            <div class="content-top">
+                                <div class="card-category" id="cardCategory">Enterprise</div>
+                                <div class="card-app-type" id="cardAppType">Your App Type</div>
+                                <h3 class="card-title" id="cardTitle">Project Name</h3>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="content-bottom">
+                                <p class="card-description" id="cardDescription">Your project description goes here. Make it compelling!</p>
+                                <div class="card-tags" id="cardTags">
+                                    <span class="tag">React</span>
+                                    <span class="tag">TypeScript</span>
+                                    <span class="tag">AI</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <!-- Element Selection -->
+                <div class="control-section">
+                    <div class="control-label">✨ Element Style</div>
+                    <div class="element-grid">
+                        <button class="element-btn active" data-element="electric" onclick="setElement('electric')">
+                            <span class="element-icon">⚡</span>
+                            <span class="element-name">Electric</span>
+                        </button>
+                        <button class="element-btn" data-element="fire" onclick="setElement('fire')">
+                            <span class="element-icon">🔥</span>
+                            <span class="element-name">Fire</span>
+                        </button>
+                        <button class="element-btn" data-element="water" onclick="setElement('water')">
+                            <span class="element-icon">💧</span>
+                            <span class="element-name">Water</span>
+                        </button>
+                        <button class="element-btn" data-element="alien" onclick="setElement('alien')">
+                            <span class="element-icon">👽</span>
+                            <span class="element-name">Alien</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Color Palette -->
+                <div class="control-section">
+                    <div class="control-label">🎨 Color Palettes (Click to Apply)</div>
+                    <div class="palette-container" id="paletteContainer"></div>
+                    <div class="selected-color-display" id="selectedColorDisplay">
+                        <div class="selected-color-preview" id="selectedColorPreview" style="background: #dd8448;"></div>
+                        <div class="selected-color-info">
+                            <div class="selected-color-hex" id="selectedColorHex">#dd8448</div>
+                            <div class="selected-color-name" id="selectedColorName">Electric (Default)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Animations -->
+                <div class="control-section">
+                    <div class="control-label">🎬 Animations</div>
+                    <div class="toggle-grid">
+                        <div class="toggle-item active" data-toggle="borderRotation" onclick="toggleAnimation(this)">
+                            <span class="toggle-item-label">Rotating Border</span>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="toggle-item active" data-toggle="glowPulse" onclick="toggleAnimation(this)">
+                            <span class="toggle-item-label">Glow Effects</span>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="toggle-item active" data-toggle="particles" onclick="toggleAnimation(this)">
+                            <span class="toggle-item-label">Particles</span>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="toggle-item" data-toggle="chromatic" onclick="toggleAnimation(this)">
+                            <span class="toggle-item-label">Chromatic Aberration</span>
+                            <div class="toggle-switch"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="control-section">
+                    <div class="control-label">📝 Card Content</div>
+                    <div class="input-group">
+                        <input type="text" class="custom-input" id="inputCategory" placeholder="Category (e.g., Enterprise)" oninput="updateContent()">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="custom-input" id="inputAppType" placeholder="App Type (e.g., Legal Software)" oninput="updateContent()">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="custom-input" id="inputTitle" placeholder="Project Title" oninput="updateContent()">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="custom-input" id="inputDescription" placeholder="Short description" oninput="updateContent()">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="custom-input" id="inputTags" placeholder="Tags (comma separated)" oninput="updateContent()">
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button class="generate-btn" onclick="generateCode()">⚡ Generate Complete Code</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Output Section -->
+    <section class="section output-section" id="output">
+        <div class="section-header">
+            <span class="section-tag">export</span>
+            <h2 class="section-title">Generated Code</h2>
+        </div>
+        
+        <p class="docs-intro">
+            Your <strong>complete, production-ready</strong> card component with all animations, 
+            particles, and effects. Copy and paste directly into your project!
+        </p>
+
+        <!-- Tabs -->
+        <div class="docs-tabs">
+            <button class="docs-tab active" data-tab="full" onclick="switchTab('full')">Full Component</button>
+            <button class="docs-tab" data-tab="html" onclick="switchTab('html')">HTML</button>
+            <button class="docs-tab" data-tab="css" onclick="switchTab('css')">CSS</button>
+            <button class="docs-tab" data-tab="js" onclick="switchTab('js')">JavaScript</button>
+        </div>
+
+        <!-- Full Component Panel -->
+        <div class="docs-panel active" id="full-panel">
+            <div class="full-code-card">
+                <div class="doc-card-header">
+                    <div class="doc-card-title">✨ Complete Standalone Component</div>
+                    <button class="copy-btn" onclick="copyCode('full-code')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Full Component
+                    </button>
+                </div>
+                <div class="doc-card-content">
+                    <pre class="code-block" id="full-code"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- HTML Panel -->
+        <div class="docs-panel" id="html-panel">
+            <div class="full-code-card">
+                <div class="doc-card-header">
+                    <div class="doc-card-title">HTML Structure</div>
+                    <button class="copy-btn" onclick="copyCode('html-code')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy HTML
+                    </button>
+                </div>
+                <div class="doc-card-content">
+                    <pre class="code-block" id="html-code"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSS Panel -->
+        <div class="docs-panel" id="css-panel">
+            <div class="full-code-card">
+                <div class="doc-card-header">
+                    <div class="doc-card-title">CSS Styles</div>
+                    <button class="copy-btn" onclick="copyCode('css-code')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy CSS
+                    </button>
+                </div>
+                <div class="doc-card-content">
+                    <pre class="code-block" id="css-code"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- JS Panel -->
+        <div class="docs-panel" id="js-panel">
+            <div class="full-code-card">
+                <div class="doc-card-header">
+                    <div class="doc-card-title">JavaScript</div>
+                    <button class="copy-btn" onclick="copyCode('js-code')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy JavaScript
+                    </button>
+                </div>
+                <div class="doc-card-content">
+                    <pre class="code-block" id="js-code"></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2025 Elemental Card Generator • Built with ⚡ and creativity</p>
+    </footer>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        // ============================================
+        // STATE
+        // ============================================
+        let currentElement = 'electric';
+        let selectedColors = {
+            color1: '#dd8448',
+            color2: '#ff9d66',
+            color3: '#ff6b35',
+            paletteName: 'Electric (Default)'
+        };
+        let animations = {
+            borderRotation: true,
+            glowPulse: true,
+            particles: true,
+            chromatic: false
+        };
+
+        // ============================================
+        // ALL 77 PALETTES
+        // ============================================
+        const palettes = [
+            // Satin
+            { name: 'Stellar Silk', category: 'satin', colors: ['#f5e6e8', '#e8d8dc', '#dcc8e0', '#c8dce8', '#f0dcc8', '#e8d0cc', '#d0e4e8', '#e8dce0', '#f0e0d4', '#d4c8dc'] },
+            { name: 'Vaporwave Silk', category: 'satin', colors: ['#ff71ce', '#01cdfe', '#b967ff', '#fe53bb', '#08f7fe', '#f706cf', '#09fbd3', '#ff00fe', '#00f0ff', '#8338ec'] },
+            { name: 'Ocean Silk', category: 'satin', colors: ['#e0f2f7', '#c8e8f0', '#b0dde8', '#98d2e0', '#80c7d8', '#68bcd0', '#50b1c8', '#38a6c0', '#209bb8', '#0890b0'] },
+            { name: 'Sunset Silk', category: 'satin', colors: ['#fff5e6', '#ffeacc', '#ffd9b3', '#ffc999', '#ffb880', '#ffa766', '#ff964d', '#ff8533', '#ff751a', '#ff6400'] },
+            { name: 'Lavender Silk', category: 'satin', colors: ['#f5e6f8', '#e8d9f0', '#dccce8', '#d0bfe0', '#c4b2d8', '#b8a5d0', '#ac98c8', '#a08bc0', '#947eb8', '#8871b0'] },
+            { name: 'Rose Silk', category: 'satin', colors: ['#ffe6f0', '#ffd9e6', '#ffccdc', '#ffbfd2', '#ffb2c8', '#ffa5be', '#ff98b4', '#ff8baa', '#ff7ea0', '#ff7196'] },
+            { name: 'Mint Silk', category: 'satin', colors: ['#e6f8f0', '#d9f0e6', '#cce8dc', '#bfe0d2', '#b2d8c8', '#a5d0be', '#98c8b4', '#8bc0aa', '#7eb8a0', '#71b096'] },
+            { name: 'Midnight Silk', category: 'satin', colors: ['#2d3748', '#374151', '#4c5773', '#2c3e5a', '#3d4e6c', '#1e3a5f', '#2e4563', '#273c55', '#3a4f68', '#1f3854'] },
+            { name: 'Shadow Silk', category: 'satin', colors: ['#52525b', '#4b5563', '#3f3f46', '#525252', '#57534e', '#475569', '#44403c', '#4b5563', '#3f3f46', '#525252'] },
+            
+            // Satin Shine
+            { name: 'Satin Shine Gold', category: 'satinshine', colors: ['#fffef9', '#fffcf2', '#fffaeb', '#fff8e4', '#fff5dd', '#fff2d4', '#ffefcb', '#ffecc2', '#ffe9b9', '#ffe5af'] },
+            { name: 'Satin Shine Silver', category: 'satinshine', colors: ['#ffffff', '#f8f8f8', '#f0f0f0', '#e8e8e8', '#e0e0e0', '#d8d8d8', '#d0d0d0', '#c8c8c8', '#c0c0c0', '#b8b8b8'] },
+            { name: 'Satin Shine Rose Gold', category: 'satinshine', colors: ['#fff5f5', '#ffecec', '#ffe3e3', '#ffdada', '#ffd1d1', '#ffc8c8', '#ffbfbf', '#ffb6b6', '#ffadad', '#ffa4a4'] },
+            { name: 'Satin Shine Copper', category: 'satinshine', colors: ['#fff5ed', '#ffebdf', '#ffe1d1', '#ffd7c3', '#ffcdb5', '#ffc3a7', '#ffb999', '#ffaf8b', '#ffa57d', '#ff9b6f'] },
+            { name: 'Satin Shine Pearl', category: 'satinshine', colors: ['#fffef9', '#faf8f0', '#f0ede1', '#e6e2d7', '#dcd7cd', '#d2ccc3', '#c8c1b9', '#beb6af', '#b4aba5', '#aaa09b'] },
+            { name: 'Satin Shine Platinum', category: 'satinshine', colors: ['#fafafa', '#f0f0f0', '#e6e6e6', '#dcdcdc', '#d2d2d2', '#c8c8c8', '#bebebe', '#b4b4b4', '#aaaaaa', '#a0a0a0'] },
+            
+            // Glowing
+            { name: 'Luminous Abyss', category: 'glowing', colors: ['#00ff9f', '#00ffea', '#00eaff', '#0095ff', '#7000ff', '#e600ff', '#ff00ae', '#ff0055', '#ff3333', '#ff6b35'] },
+            { name: 'Neon Fusion', category: 'glowing', colors: ['#feca57', '#fbc531', '#badc58', '#7bed9f', '#a8e6cf', '#48dbfb', '#3dc1d3', '#00d2d3', '#5f68ed', '#5352ed'] },
+            { name: 'Purple Spectrum', category: 'glowing', colors: ['#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce', '#6b21a8', '#581c87', '#3b0764'] },
+            { name: 'Fuchsia Blaze', category: 'glowing', colors: ['#fdf4ff', '#fae8ff', '#f5d0fe', '#f0abfc', '#e879f9', '#d946ef', '#c026d3', '#a21caf', '#86198f', '#701a75'] },
+            { name: 'Pink Radiance', category: 'glowing', colors: ['#fdf2f8', '#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#ec4899', '#db2777', '#be185d', '#9f1239', '#831843'] },
+            { name: 'Rose Flare', category: 'glowing', colors: ['#fff1f2', '#ffe4e6', '#fecdd3', '#fda4af', '#fb7185', '#f43f5e', '#e11d48', '#be123c', '#9f1239', '#881337'] },
+            { name: 'Cyan Electric', category: 'glowing', colors: ['#ecfeff', '#cffafe', '#a5f3fc', '#67e8f9', '#22d3ee', '#06b6d4', '#0891b2', '#0e7490', '#155e75', '#164e63'] },
+            { name: 'Emerald Glow', category: 'glowing', colors: ['#ecfdf5', '#d1fae5', '#a7f3d0', '#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46', '#064e3b'] },
+            { name: 'Amber Burst', category: 'glowing', colors: ['#fffbeb', '#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f'] },
+            { name: 'Milky Whites', category: 'glowing', colors: ['#ffffff', '#fefefe', '#fdfdfd', '#fcfcfc', '#fbfbfb', '#fafafa', '#f9f9f9', '#f8f8f8', '#f7f7f7', '#f6f6f6'] },
+            { name: 'Jewel Tones', category: 'glowing', colors: ['#9b2226', '#ae2012', '#bb3e03', '#ca6702', '#0a9396', '#005f73', '#1b4965', '#2e86ab', '#8e24aa', '#6a1b9a'] },
+            { name: 'Cool Spectrum', category: 'glowing', colors: ['#e0f7fa', '#b2ebf2', '#80deea', '#4dd0e1', '#26c6da', '#00bcd4', '#00acc1', '#0097a7', '#00838f', '#006064'] },
+            { name: 'Neon Pastels', category: 'glowing', colors: ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff', '#ff9ebb', '#ffb5e8'] },
+            { name: 'Cyberpunk', category: 'glowing', colors: ['#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff0080', '#0080ff', '#ff3366', '#66ffcc', '#ff1744', '#00e676'] },
+            
+            // Holographic
+            { name: 'Holographic Spectrum', category: 'holographic', colors: ['#ff0080', '#ff0099', '#ff00b3', '#ff00cc', '#e600ff', '#cc00ff', '#b300ff', '#9900ff', '#7f00ff', '#6600ff'] },
+            { name: 'Holographic Warm', category: 'holographic', colors: ['#ff0000', '#ff1a00', '#ff3300', '#ff4d00', '#ff6600', '#ff8000', '#ff9900', '#ffb300', '#ffcc00', '#ffe600'] },
+            { name: 'Holographic Cool', category: 'holographic', colors: ['#00ffff', '#00e6ff', '#00ccff', '#00b3ff', '#0099ff', '#0080ff', '#0066ff', '#004dff', '#0033ff', '#001aff'] },
+            { name: 'Holographic Pastel', category: 'holographic', colors: ['#ffccff', '#ffccee', '#ffccdd', '#ffddcc', '#ffeedd', '#ffffcc', '#eeffdd', '#ddffee', '#ccffff', '#ccddff'] },
+            { name: 'Holographic Neon', category: 'holographic', colors: ['#ff00ff', '#ff00cc', '#ff0099', '#ff0066', '#ff0033', '#ff3300', '#ff6600', '#ff9900', '#ffcc00', '#ffff00'] },
+            { name: 'Holographic Aurora', category: 'holographic', colors: ['#7fffd4', '#40e0d0', '#00ced1', '#00bfff', '#1e90ff', '#4169e1', '#6a5acd', '#7b68ee', '#9370db', '#ba55d3'] },
+            { name: 'Prismatic Shimmer', category: 'holographic', colors: ['#ff0000', '#ff4000', '#ff8000', '#ffbf00', '#ffff00', '#bfff00', '#80ff00', '#40ff00', '#00ff00', '#00ff40'] },
+            { name: 'Spectrum Border', category: 'holographic', colors: ['#ff0000', '#ff7700', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#8b00ff', '#ff00ff', '#ff0077', '#ffffff'] },
+            
+            // Glass
+            { name: 'Frosted Glass Blue', category: 'glass', colors: ['#f0f9ff', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7', '#0369a1', '#075985', '#0c4a6e'] },
+            { name: 'Frosted Glass Pink', category: 'glass', colors: ['#fdf2f8', '#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#ec4899', '#db2777', '#be185d', '#9f1239', '#831843'] },
+            { name: 'Frosted Glass Green', category: 'glass', colors: ['#f0fdf4', '#dcfce7', '#bbf7d0', '#86efac', '#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534', '#14532d'] },
+            { name: 'Frosted Glass Purple', category: 'glass', colors: ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce', '#6b21a8', '#581c87'] },
+            { name: 'Frosted Glass Amber', category: 'glass', colors: ['#fffbeb', '#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f'] },
+            { name: 'Frosted Glass Smoke', category: 'glass', colors: ['#fafafa', '#f4f4f5', '#e4e4e7', '#d4d4d8', '#a1a1aa', '#71717a', '#52525b', '#3f3f46', '#27272a', '#18181b'] },
+            
+            // Metallic
+            { name: 'Metallic Gold', category: 'metallic', colors: ['#fff9e6', '#fff3cc', '#ffeab3', '#ffe199', '#ffd700', '#ffca28', '#ffb300', '#ff9800', '#f57c00', '#e65100'] },
+            { name: 'Metallic Silver', category: 'metallic', colors: ['#f5f5f5', '#eeeeee', '#e0e0e0', '#d5d5d5', '#c0c0c0', '#b0b0b0', '#a0a0a0', '#909090', '#808080', '#707070'] },
+            { name: 'Metallic Bronze', category: 'metallic', colors: ['#ffefd5', '#ffe4b5', '#ffd59a', '#ffc68a', '#cd7f32', '#b87333', '#a0522d', '#8b4513', '#704214', '#5c3317'] },
+            { name: 'Metallic Copper', category: 'metallic', colors: ['#ffdab9', '#ffccaa', '#ffb88c', '#ffa566', '#ff9248', '#f87217', '#e67300', '#d56500', '#c35600', '#b87333'] },
+            { name: 'Metallic Rose Gold', category: 'metallic', colors: ['#fff5f5', '#ffe4e9', '#ffc9d9', '#ffb3c6', '#ff9cb3', '#ff85a1', '#f76f8e', '#e0577f', '#b76e79', '#9c7c7c'] },
+            { name: 'Metallic Platinum', category: 'metallic', colors: ['#fafafa', '#f5f5f5', '#f0f0f0', '#ebebeb', '#e5e4e2', '#dcdcdc', '#d3d3d3', '#c9c9c9', '#bebebe', '#b4b4b4'] },
+            
+            // Solid
+            { name: 'Nebula Storm', category: 'solid', colors: ['#55efc4', '#81ecec', '#74b9ff', '#a29bfe', '#dfe6e9', '#b2bec3', '#6c5ce7', '#0984e3', '#00b894', '#00cec9'] },
+            { name: 'Solar Flare', category: 'solid', colors: ['#f6e58d', '#ffbe76', '#ff6b6b', '#95e1d3', '#eaf2f8', '#a3cbf1', '#6ab04c', '#ee5a6f', '#f39c12', '#f1c40f'] },
+            { name: 'Quantum Blue', category: 'solid', colors: ['#00b8ff', '#9b59b6', '#f39c12', '#2ecc71', '#5189b9', '#3e7d9a', '#27ae60', '#f1c40f', '#9b59b6', '#00b8ff'] },
+            { name: 'Cosmic Dawn', category: 'solid', colors: ['#ffa8d5', '#ffbe3d', '#ff6b81', '#48dbfb', '#1dd1a1', '#10ac84', '#00d2d3', '#ff6348', '#ff9500', '#ff006b'] },
+            { name: 'Photon Burst', category: 'solid', colors: ['#f1c40f', '#ff9f43', '#ee5a6f', '#b2bec3', '#576574', '#222f3e', '#8395a7', '#ff6348', '#ff5e57', '#ffa502'] },
+            { name: 'Plasma Vortex', category: 'solid', colors: ['#fbc531', '#badc58', '#00d2d3', '#f0a6ca', '#eb3b5a', '#a5436e', '#c56cf0', '#0a7fb5', '#7bed9f', '#ff9f1a'] },
+            { name: 'Stellar Drift', category: 'solid', colors: ['#feca57', '#ffa07a', '#6b88cf', '#48dbfb', '#a8e6cf', '#3dc1d3', '#5189b9', '#5f68ed', '#ee5a6f', '#feca57'] },
+            { name: 'Aurora Core', category: 'solid', colors: ['#ff6b6b', '#ff0000', '#ffd93d', '#2ecc71', '#17c0eb', '#17a2b8', '#27ae60', '#f39c12', '#ff9f43', '#ee5a6f'] },
+            { name: 'Prism Matrix', category: 'solid', colors: ['#ffb8a3', '#0abde3', '#f1c40f', '#2ecc71', '#c8f5dc', '#2d3436', '#3dc1d3', '#fffacd', '#2e86de', '#ff9f43'] },
+            { name: 'Void Walker', category: 'solid', colors: ['#ffbe9d', '#ffd861', '#7289ff', '#ff9a76', '#d98fb4', '#c44569', '#ff6348', '#6c5ce7', '#ffd32a', '#ff9a76'] },
+            { name: 'Pastel Dreams', category: 'solid', colors: ['#ffd6e8', '#ffe8d6', '#fffacd', '#d6f5d6', '#d6f5ff', '#e8d6ff', '#ffd6f5', '#ffeaa7', '#a8e6cf', '#74b9ff'] },
+            { name: 'Monochrome', category: 'solid', colors: ['#ffffff', '#f8f9fa', '#f1f3f5', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd', '#868e96', '#495057', '#343a40'] },
+            { name: 'Earth Tones', category: 'solid', colors: ['#ddb892', '#c9a66b', '#a47551', '#8b5a3c', '#6f4518', '#5c3d2e', '#8d6e63', '#a1887f', '#bcaaa4', '#d7ccc8'] },
+            { name: 'Ocean Depths', category: 'solid', colors: ['#e0f2f7', '#b3e5fc', '#81d4fa', '#4fc3f7', '#29b6f6', '#03a9f4', '#039be5', '#0288d1', '#0277bd', '#01579b'] },
+            { name: 'Forest Canopy', category: 'solid', colors: ['#e8f5e9', '#c8e6c9', '#a5d6a7', '#81c784', '#66bb6a', '#4caf50', '#43a047', '#388e3c', '#2e7d32', '#1b5e20'] },
+            { name: 'Vintage Retro', category: 'solid', colors: ['#e63946', '#f77f00', '#fcbf49', '#eae2b7', '#8ecae6', '#219ebc', '#023047', '#fb8500', '#ffb703', '#d62828'] },
+            { name: 'Candy Pop', category: 'solid', colors: ['#ff6b9d', '#fec5e5', '#fff0f5', '#c1ffd7', '#b4f8c8', '#fbe7c6', '#ffaaa5', '#ff8b94', '#ffcfd2', '#f1c0e8'] },
+            { name: 'Corporate Blue', category: 'solid', colors: ['#e3f2fd', '#bbdefb', '#90caf9', '#64b5f6', '#42a5f5', '#2196f3', '#1e88e5', '#1976d2', '#1565c0', '#0d47a1'] },
+            { name: 'Warm Spectrum', category: 'solid', colors: ['#ffebee', '#ffcdd2', '#ef9a9a', '#e57373', '#ef5350', '#f44336', '#e53935', '#d32f2f', '#ff6f00', '#ff8f00'] },
+            { name: 'Vaporwave', category: 'solid', colors: ['#ff71ce', '#01cdfe', '#05ffa1', '#b967ff', '#fffb96', '#fe53bb', '#08f7fe', '#09fbd3', '#f706cf', '#fe00fe'] },
+            { name: 'Dark Mode', category: 'solid', colors: ['#1a1a2e', '#16213e', '#0f3460', '#1e2a3a', '#1f2937', '#111827', '#0d1117', '#161b22', '#21262d', '#30363d'] },
+            
+            // Gradient
+            { name: 'Neon Horizons', category: 'gradient', colors: ['#00ff9f', '#00b8ff', '#ff00ae', '#7000ff', '#ffdd00', '#ff6b35', '#6bff00', '#00ffd5', '#ff0055', '#e600ff'] },
+            { name: 'Sunset Dreams', category: 'gradient', colors: ['#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7', '#fa709a', '#fee140', '#30cfd0', '#330867'] },
+            { name: 'Cosmic Rays', category: 'gradient', colors: ['#ee0979', '#ff6a00', '#f12711', '#f5af19', '#c21500', '#ffc500', '#fc466b', '#3f5efb', '#8e2de2', '#4a00e0'] },
+            { name: 'Sunset Skies', category: 'gradient', colors: ['#ff9966', '#ff5e62', '#ff6e7f', '#bfe9ff', '#ff0844', '#ffb199', '#fc354c', '#0abfbc', '#f5af19', '#f12711'] },
+            { name: 'Duotone Pairs', category: 'gradient', colors: ['#000000', '#ff0000', '#ffffff', '#0000ff', '#ff00ff', '#00ffff', '#ffff00', '#ff00ff', '#00ff00', '#0000ff'] },
+        ];
+
+        // ============================================
+        // INITIALIZE
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPalettes();
+            initParticles('electric');
+            generateCode();
+        });
+
+        // ============================================
+        // RENDER PALETTES
+        // ============================================
+        function renderPalettes() {
+            const container = document.getElementById('paletteContainer');
+            container.innerHTML = '';
+
+            const categories = [...new Set(palettes.map(p => p.category))];
+            
+            categories.forEach(category => {
+                const catPalettes = palettes.filter(p => p.category === category);
+                
+                catPalettes.forEach(palette => {
+                    const group = document.createElement('div');
+                    group.className = 'palette-group';
+                    
+                    const title = document.createElement('div');
+                    title.className = 'palette-group-name';
+                    title.textContent = palette.name;
+                    title.onclick = () => applyPalette(palette);
+                    group.appendChild(title);
+
+                    const colors = document.createElement('div');
+                    colors.className = 'palette-colors';
+
+                    palette.colors.forEach((color, idx) => {
+                        const swatch = document.createElement('div');
+                        swatch.className = 'color-swatch';
+                        if (['glowing', 'holographic', 'neon'].some(c => palette.category.includes(c))) {
+                            swatch.classList.add('glowing');
+                        }
+                        swatch.style.background = color;
+                        swatch.title = `${color} - Click to apply`;
+                        swatch.onclick = (e) => {
+                            e.stopPropagation();
+                            applyColor(color, palette.name, palette.colors, idx);
+                        };
+                        colors.appendChild(swatch);
+                    });
+
+                    group.appendChild(colors);
+                    container.appendChild(group);
+                });
+            });
+        }
+
+        // ============================================
+        // APPLY COLOR - THIS ACTUALLY CHANGES THE CARD!
+        // ============================================
+        function applyColor(color, paletteName, paletteColors, index) {
+            // Get 3 colors from the palette
+            const color1 = color;
+            const color2 = paletteColors[(index + 1) % paletteColors.length];
+            const color3 = paletteColors[(index + 2) % paletteColors.length];
+            
+            // Calculate glow from first color
+            const rgb = hexToRgb(color1);
+            const glow = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)` : 'rgba(221, 132, 72, 0.5)';
+
+            // Store selection
+            selectedColors = { color1, color2, color3, paletteName };
+
+            // APPLY TO CSS VARIABLES - This is the key!
+            document.documentElement.style.setProperty('--active-color-1', color1);
+            document.documentElement.style.setProperty('--active-color-2', color2);
+            document.documentElement.style.setProperty('--active-color-3', color3);
+            document.documentElement.style.setProperty('--active-glow', glow);
+
+            // Update selected display
+            document.getElementById('selectedColorPreview').style.background = `linear-gradient(135deg, ${color1}, ${color2})`;
+            document.getElementById('selectedColorHex').textContent = `${color1} → ${color2}`;
+            document.getElementById('selectedColorName').textContent = paletteName;
+
+            // Update swatch selection visuals
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            event.target.classList.add('selected');
+
+            // Regenerate particles with new color
+            initParticles(currentElement);
+
+            // Update code
+            generateCode();
+
+            showToast(`Applied: ${color1} from ${paletteName}`);
+        }
+
+        function applyPalette(palette) {
+            applyColor(palette.colors[0], palette.name, palette.colors, 0);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // ============================================
+        // SET ELEMENT
+        // ============================================
+        function setElement(element) {
+            currentElement = element;
+            const card = document.getElementById('previewCard');
+            card.setAttribute('data-element', element);
+
+            // Update buttons
+            document.querySelectorAll('.element-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.element === element) btn.classList.add('active');
+            });
+
+            // Reinit particles
+            initParticles(element);
+
+            // Update code
+            generateCode();
+        }
+
+        // ============================================
+        // INIT PARTICLES
+        // ============================================
+        function initParticles(element) {
+            const container = document.getElementById('particlesContainer');
+            container.innerHTML = '';
+            container.className = `element-particles ${element}-particles`;
+
+            if (!animations.particles) return;
+
+            if (element === 'electric') {
+                for (let i = 0; i < 15; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    p.style.left = Math.random() * 100 + '%';
+                    p.style.top = Math.random() * 100 + '%';
+                    p.style.animationDelay = Math.random() * 0.5 + 's';
+                    container.appendChild(p);
+                }
+            } else if (element === 'fire') {
+                for (let i = 0; i < 20; i++) {
+                    const ember = document.createElement('div');
+                    ember.className = 'ember';
+                    ember.style.left = Math.random() * 100 + '%';
+                    ember.style.animationDelay = Math.random() * 3 + 's';
+                    ember.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    container.appendChild(ember);
+                }
+            } else if (element === 'water') {
+                for (let i = 0; i < 15; i++) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    bubble.style.left = Math.random() * 100 + '%';
+                    bubble.style.width = (5 + Math.random() * 15) + 'px';
+                    bubble.style.height = bubble.style.width;
+                    bubble.style.animationDelay = Math.random() * 4 + 's';
+                    container.appendChild(bubble);
+                }
+                // Add ripples
+                const ripples = document.getElementById('waterRipples');
+                ripples.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const ripple = document.createElement('div');
+                    ripple.className = 'ripple';
+                    ripple.style.left = (20 + Math.random() * 60) + '%';
+                    ripple.style.top = (20 + Math.random() * 60) + '%';
+                    ripple.style.animationDelay = i * 1 + 's';
+                    ripples.appendChild(ripple);
+                }
+            } else if (element === 'alien') {
+                for (let i = 0; i < 12; i++) {
+                    const spore = document.createElement('div');
+                    spore.className = 'spore';
+                    spore.style.left = Math.random() * 100 + '%';
+                    spore.style.bottom = Math.random() * 50 + '%';
+                    spore.style.animationDelay = Math.random() * 5 + 's';
+                    container.appendChild(spore);
+                }
+            }
+        }
+
+        // ============================================
+        // TOGGLE ANIMATION
+        // ============================================
+        function toggleAnimation(item) {
+            item.classList.toggle('active');
+            const toggle = item.dataset.toggle;
+            animations[toggle] = item.classList.contains('active');
+
+            const borderAnim = document.getElementById('borderAnimation');
+            const glowContainer = document.getElementById('glowContainer');
+            const chromaticLayer = document.getElementById('chromaticLayer');
+
+            if (toggle === 'borderRotation') {
+                borderAnim.style.display = animations.borderRotation ? 'block' : 'none';
+            }
+            if (toggle === 'glowPulse') {
+                glowContainer.style.opacity = animations.glowPulse ? '1' : '0';
+            }
+            if (toggle === 'particles') {
+                initParticles(currentElement);
+            }
+            if (toggle === 'chromatic') {
+                if (animations.chromatic) {
+                    chromaticLayer.classList.add('active');
+                } else {
+                    chromaticLayer.classList.remove('active');
+                }
+            }
+
+            generateCode();
+        }
+
+        // ============================================
+        // UPDATE CONTENT
+        // ============================================
+        function updateContent() {
+            document.getElementById('cardCategory').textContent = document.getElementById('inputCategory').value || 'Enterprise';
+            document.getElementById('cardAppType').textContent = document.getElementById('inputAppType').value || 'Your App Type';
+            document.getElementById('cardTitle').textContent = document.getElementById('inputTitle').value || 'Project Name';
+            document.getElementById('cardDescription').textContent = document.getElementById('inputDescription').value || 'Your project description goes here.';
+
+            const tagsInput = document.getElementById('inputTags').value;
+            if (tagsInput) {
+                const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
+                document.getElementById('cardTags').innerHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+            }
+
+            generateCode();
+        }
+
+        // ============================================
+        // GENERATE COMPLETE CODE
+        // ============================================
+        function generateCode() {
+            const category = document.getElementById('inputCategory').value || 'Enterprise';
+            const appType = document.getElementById('inputAppType').value || 'Your App Type';
+            const title = document.getElementById('inputTitle').value || 'Project Name';
+            const description = document.getElementById('inputDescription').value || 'Your project description goes here.';
+            const tagsInput = document.getElementById('inputTags').value || 'React, TypeScript, AI';
+            const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
+
+            const { color1, color2, color3, paletteName } = selectedColors;
+            const rgb = hexToRgb(color1);
+            const glowRgba = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)` : 'rgba(221, 132, 72, 0.5)';
+
+            const tagsHtml = tags.map(t => `                    <span class="tag">${t}</span>`).join('\n');
+
+            // ============ FULL COMPONENT CODE ============
+            const fullCode = `<!--
+  ELEMENTAL CARD COMPONENT
+  Element: ${currentElement.toUpperCase()}
+  Colors: ${color1} → ${color2} → ${color3}
+  Palette: ${paletteName}
+  
+  Generated by Elemental Card Generator
+  Just copy this entire block into your HTML file!
+-->
+
+<style>
+/* ============================================
+   CSS VARIABLES - YOUR CUSTOM COLORS
+   ============================================ */
+:root {
+    --card-color-1: ${color1};
+    --card-color-2: ${color2};
+    --card-color-3: ${color3};
+    --card-glow: ${glowRgba};
+}
+
+/* ============================================
+   BASE CARD STRUCTURE
+   ============================================ */
+.elemental-card {
+    position: relative;
+    width: 380px;
+    height: 480px;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.elemental-card:hover {
+    transform: translateY(-15px);
+}
+
+/* Card Frame with Gradient Border */
+.card-frame {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--card-color-1), var(--card-color-2));
+}
+
+.card-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+${animations.borderRotation ? `/* ============================================
+   ROTATING BORDER ANIMATION
+   ============================================ */
+.border-animation {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.border-animation::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: conic-gradient(from 0deg, transparent, var(--card-color-1), var(--card-color-2), transparent);
+    animation: rotate-border 4s linear infinite;
+}
+
+@keyframes rotate-border {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.border-animation::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+}
+` : ''}
+${animations.glowPulse ? `/* ============================================
+   GLOW EFFECTS
+   ============================================ */
+.glow-container {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.6;
+}
+
+.glow-orb-1 {
+    width: 150px;
+    height: 150px;
+    top: -30px;
+    right: -30px;
+    background: var(--card-color-2);
+    ${currentElement === 'fire' ? 'animation: fire-pulse-1 2s ease-in-out infinite;' : ''}
+    ${currentElement === 'water' ? 'animation: water-float-1 4s ease-in-out infinite;' : ''}
+    ${currentElement === 'alien' ? 'animation: alien-morph-1 3s ease-in-out infinite;' : ''}
+}
+
+.glow-orb-2 {
+    width: 120px;
+    height: 120px;
+    bottom: -20px;
+    left: -20px;
+    background: var(--card-color-1);
+    ${currentElement === 'fire' ? 'animation: fire-pulse-2 2.5s ease-in-out infinite;' : ''}
+    ${currentElement === 'water' ? 'animation: water-float-2 5s ease-in-out infinite;' : ''}
+    ${currentElement === 'alien' ? 'animation: alien-morph-2 4s ease-in-out infinite;' : ''}
+}
+
+.glow-orb-3 {
+    width: 80px;
+    height: 80px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--card-color-3);
+    ${currentElement === 'fire' ? 'animation: fire-pulse-3 1.5s ease-in-out infinite;' : ''}
+    ${currentElement === 'water' ? 'animation: water-float-3 3.5s ease-in-out infinite;' : ''}
+    ${currentElement === 'alien' ? 'animation: alien-morph-3 2.5s ease-in-out infinite;' : ''}
+}
+
+${currentElement === 'fire' ? `/* Fire Pulse Animations */
+@keyframes fire-pulse-1 {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.2); }
+}
+
+@keyframes fire-pulse-2 {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.3); }
+}
+
+@keyframes fire-pulse-3 {
+    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.4); }
+}
+
+/* Fire Wave Effect */
+.fire-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, var(--card-glow), transparent);
+    animation: fire-wave-move 2s ease-in-out infinite;
+    filter: blur(10px);
+}
+
+@keyframes fire-wave-move {
+    0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.5; }
+    50% { transform: translateY(-20px) scaleY(1.2); opacity: 0.8; }
+}` : ''}
+${currentElement === 'water' ? `/* Water Float Animations */
+@keyframes water-float-1 {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    25% { transform: translateY(-10px) translateX(5px); }
+    50% { transform: translateY(0) translateX(10px); }
+    75% { transform: translateY(10px) translateX(5px); }
+}
+
+@keyframes water-float-2 {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    33% { transform: translateY(15px) translateX(-10px); }
+    66% { transform: translateY(-10px) translateX(5px); }
+}
+
+@keyframes water-float-3 {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.3); }
+}
+
+/* Water Ripple Effect */
+.water-ripples {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+.ripple {
+    position: absolute;
+    border: 2px solid var(--card-color-1);
+    border-radius: 50%;
+    opacity: 0;
+    animation: ripple-expand 3s ease-out infinite;
+}
+
+@keyframes ripple-expand {
+    0% { width: 0; height: 0; opacity: 0.8; transform: translate(-50%, -50%); }
+    100% { width: 300px; height: 300px; opacity: 0; transform: translate(-50%, -50%); }
+}` : ''}
+${currentElement === 'alien' ? `/* Alien Morph Animations */
+@keyframes alien-morph-1 {
+    0%, 100% { border-radius: 50%; transform: scale(1) rotate(0deg); }
+    25% { border-radius: 40% 60% 70% 30%; transform: scale(1.1) rotate(90deg); }
+    50% { border-radius: 60% 40% 30% 70%; transform: scale(0.9) rotate(180deg); }
+    75% { border-radius: 30% 70% 50% 50%; transform: scale(1.05) rotate(270deg); }
+}
+
+@keyframes alien-morph-2 {
+    0%, 100% { border-radius: 50%; transform: scale(1); filter: hue-rotate(0deg); }
+    50% { border-radius: 70% 30% 50% 50%; transform: scale(1.2); filter: hue-rotate(60deg); }
+}
+
+@keyframes alien-morph-3 {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); filter: hue-rotate(0deg) brightness(1); }
+    33% { transform: translate(-50%, -50%) scale(1.5); filter: hue-rotate(120deg) brightness(1.5); }
+    66% { transform: translate(-50%, -50%) scale(0.8); filter: hue-rotate(240deg) brightness(0.8); }
+}
+
+/* Alien Portal Effect */
+.alien-portal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 30%, var(--card-glow) 50%, transparent 90%);
+    animation: portal-spin 8s linear infinite;
+}
+
+.alien-portal::before,
+.alien-portal::after {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    border-top-color: var(--card-color-2);
+    border-bottom-color: var(--card-color-3);
+    animation: portal-ring 3s linear infinite;
+}
+
+.alien-portal::after {
+    inset: -25px;
+    animation-direction: reverse;
+    animation-duration: 4s;
+}
+
+@keyframes portal-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes portal-ring {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}` : ''}
+` : ''}
+/* Filter/Border Glow Layer */
+.filter-layer {
+    position: absolute;
+    inset: 0;
+    border: 3px solid var(--card-color-1);
+    border-radius: 20px;
+    box-shadow: 0 0 20px var(--card-glow), inset 0 0 20px var(--card-glow);
+    ${currentElement === 'alien' ? 'animation: alien-border-shift 3s ease-in-out infinite;' : ''}
+}
+
+${currentElement === 'alien' ? `@keyframes alien-border-shift {
+    0%, 100% { border-color: var(--card-color-1); box-shadow: 0 0 20px var(--card-glow); }
+    33% { border-color: var(--card-color-2); box-shadow: 0 0 20px var(--card-color-2); }
+    66% { border-color: var(--card-color-3); box-shadow: 0 0 20px var(--card-color-3); }
+}` : ''}
+
+${animations.chromatic ? `/* Chromatic Aberration */
+.chromatic-layer {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    animation: chromatic-shift 2s ease-in-out infinite;
+}
+
+@keyframes chromatic-shift {
+    0%, 100% { box-shadow: -2px 0 var(--card-color-3), 2px 0 var(--card-color-2); }
+    50% { box-shadow: -4px 0 var(--card-color-2), 4px 0 var(--card-color-3); }
+}
+` : ''}
+${animations.particles ? `/* ============================================
+   PARTICLE EFFECTS
+   ============================================ */
+.element-particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+${currentElement === 'electric' ? `/* Electric Particles */
+.particle {
+    position: absolute;
+    width: 2px;
+    height: 10px;
+    background: linear-gradient(to bottom, var(--card-color-1), transparent);
+    animation: electric-particle 0.5s linear infinite;
+}
+
+@keyframes electric-particle {
+    0% { opacity: 1; transform: translateY(0) scaleY(1); }
+    100% { opacity: 0; transform: translateY(20px) scaleY(0.5); }
+}` : ''}
+${currentElement === 'fire' ? `/* Fire Embers */
+.ember {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--card-color-2);
+    border-radius: 50%;
+    bottom: 0;
+    animation: ember-rise 3s ease-out infinite;
+    box-shadow: 0 0 6px var(--card-color-2), 0 0 12px var(--card-color-1);
+}
+
+@keyframes ember-rise {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-400px) scale(0); }
+}` : ''}
+${currentElement === 'water' ? `/* Water Bubbles */
+.bubble {
+    position: absolute;
+    border: 1px solid var(--card-color-2);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent);
+    animation: bubble-rise 4s ease-in-out infinite;
+}
+
+@keyframes bubble-rise {
+    0% { opacity: 0; transform: translateY(100%) scale(0.5); }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-100%) scale(1); }
+}` : ''}
+${currentElement === 'alien' ? `/* Alien Spores */
+.spore {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--card-color-2);
+    border-radius: 50%;
+    animation: spore-float 5s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--card-color-2), 0 0 20px var(--card-color-1);
+}
+
+@keyframes spore-float {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+    25% { transform: translate(30px, -50px) scale(1.2); opacity: 1; }
+    50% { transform: translate(-20px, -100px) scale(0.8); opacity: 0.6; }
+    75% { transform: translate(40px, -150px) scale(1.1); opacity: 0.4; }
+}` : ''}
+` : ''}
+/* ============================================
+   CARD CONTENT STYLING
+   ============================================ */
+.content-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    z-index: 100;
+    color: #fafafa;
+}
+
+.content-top {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+}
+
+.content-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card-category {
+    background: var(--card-glow);
+    border: 1px solid var(--card-color-1);
+    border-radius: 20px;
+    width: fit-content;
+    padding: 6px 14px;
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--card-color-1);
+}
+
+.card-app-type {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--card-color-1);
+}
+
+.card-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: auto;
+    line-height: 1.2;
+}
+
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+}
+
+.card-description {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+}
+
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag {
+    background: var(--card-glow);
+    border: 1px solid var(--card-color-1);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 10px;
+    color: var(--card-color-2);
+}
+</style>
+
+<!-- ============================================
+     HTML STRUCTURE
+     ============================================ -->
+<div class="elemental-card">
+    <!-- Gradient Frame -->
+    <div class="card-frame">
+        <div class="card-inner"></div>
+    </div>
+    
+    ${animations.borderRotation ? '<!-- Rotating Border -->\n    <div class="border-animation"></div>\n    ' : ''}
+    ${animations.glowPulse ? `<!-- Glow Effects -->
+    <div class="glow-container">
+        <div class="glow-orb glow-orb-1"></div>
+        <div class="glow-orb glow-orb-2"></div>
+        <div class="glow-orb glow-orb-3"></div>
+        ${currentElement === 'fire' ? '<div class="fire-wave"></div>' : ''}
+        ${currentElement === 'water' ? '<div class="water-ripples" id="waterRipples"></div>' : ''}
+        ${currentElement === 'alien' ? '<div class="alien-portal"></div>' : ''}
+    </div>
+    ` : ''}
+    <!-- Border Glow -->
+    <div class="filter-layer"></div>
+    
+    ${animations.chromatic ? '<!-- Chromatic Aberration -->\n    <div class="chromatic-layer"></div>\n    ' : ''}
+    ${animations.particles ? `<!-- Particles -->
+    <div class="element-particles" id="particlesContainer"></div>
+    ` : ''}
+    <!-- Content -->
+    <div class="content-container">
+        <div class="content-top">
+            <div class="card-category">${category}</div>
+            <div class="card-app-type">${appType}</div>
+            <h3 class="card-title">${title}</h3>
+        </div>
+        <div class="divider"></div>
+        <div class="content-bottom">
+            <p class="card-description">${description}</p>
+            <div class="card-tags">
+${tagsHtml}
+            </div>
+        </div>
+    </div>
+</div>
+
+${animations.particles ? `<script>
+// ============================================
+// PARTICLE INITIALIZATION
+// ============================================
+function initParticles() {
+    const container = document.getElementById('particlesContainer');
+    
+    ${currentElement === 'electric' ? `// Electric particles
+    for (let i = 0; i < 15; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 0.5 + 's';
+        container.appendChild(p);
+    }` : ''}
+    ${currentElement === 'fire' ? `// Fire embers
+    for (let i = 0; i < 20; i++) {
+        const ember = document.createElement('div');
+        ember.className = 'ember';
+        ember.style.left = Math.random() * 100 + '%';
+        ember.style.animationDelay = Math.random() * 3 + 's';
+        ember.style.animationDuration = (2 + Math.random() * 2) + 's';
+        container.appendChild(ember);
+    }` : ''}
+    ${currentElement === 'water' ? `// Water bubbles
+    for (let i = 0; i < 15; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.style.left = Math.random() * 100 + '%';
+        bubble.style.width = (5 + Math.random() * 15) + 'px';
+        bubble.style.height = bubble.style.width;
+        bubble.style.animationDelay = Math.random() * 4 + 's';
+        container.appendChild(bubble);
+    }
+    
+    // Water ripples
+    const ripples = document.getElementById('waterRipples');
+    for (let i = 0; i < 3; i++) {
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple';
+        ripple.style.left = (20 + Math.random() * 60) + '%';
+        ripple.style.top = (20 + Math.random() * 60) + '%';
+        ripple.style.animationDelay = i * 1 + 's';
+        ripples.appendChild(ripple);
+    }` : ''}
+    ${currentElement === 'alien' ? `// Alien spores
+    for (let i = 0; i < 12; i++) {
+        const spore = document.createElement('div');
+        spore.className = 'spore';
+        spore.style.left = Math.random() * 100 + '%';
+        spore.style.bottom = Math.random() * 50 + '%';
+        spore.style.animationDelay = Math.random() * 5 + 's';
+        container.appendChild(spore);
+    }` : ''}
+}
+
+document.addEventListener('DOMContentLoaded', initParticles);
+<\/script>` : ''}`;
+
+            // HTML only
+            const htmlCode = `<!-- ${currentElement.toUpperCase()} Elemental Card -->
+<div class="elemental-card">
+    <div class="card-frame">
+        <div class="card-inner"></div>
+    </div>
+    ${animations.borderRotation ? '<div class="border-animation"></div>' : ''}
+    ${animations.glowPulse ? `<div class="glow-container">
+        <div class="glow-orb glow-orb-1"></div>
+        <div class="glow-orb glow-orb-2"></div>
+        <div class="glow-orb glow-orb-3"></div>
+        ${currentElement === 'fire' ? '<div class="fire-wave"></div>' : ''}
+        ${currentElement === 'water' ? '<div class="water-ripples" id="waterRipples"></div>' : ''}
+        ${currentElement === 'alien' ? '<div class="alien-portal"></div>' : ''}
+    </div>` : ''}
+    <div class="filter-layer"></div>
+    ${animations.chromatic ? '<div class="chromatic-layer"></div>' : ''}
+    ${animations.particles ? '<div class="element-particles" id="particlesContainer"></div>' : ''}
+    <div class="content-container">
+        <div class="content-top">
+            <div class="card-category">${category}</div>
+            <div class="card-app-type">${appType}</div>
+            <h3 class="card-title">${title}</h3>
+        </div>
+        <div class="divider"></div>
+        <div class="content-bottom">
+            <p class="card-description">${description}</p>
+            <div class="card-tags">
+${tagsHtml}
+            </div>
+        </div>
+    </div>
+</div>`;
+
+            // CSS only
+            const cssCode = `/* Your Custom Colors */
+:root {
+    --card-color-1: ${color1};
+    --card-color-2: ${color2};
+    --card-color-3: ${color3};
+    --card-glow: ${glowRgba};
+}
+
+/* See Full Component tab for complete CSS */`;
+
+            // JS only
+            const jsCode = `// Particle initialization for ${currentElement} element
+function initParticles() {
+    const container = document.getElementById('particlesContainer');
+    ${currentElement === 'electric' ? `
+    for (let i = 0; i < 15; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 0.5 + 's';
+        container.appendChild(p);
+    }` : ''}
+    ${currentElement === 'fire' ? `
+    for (let i = 0; i < 20; i++) {
+        const ember = document.createElement('div');
+        ember.className = 'ember';
+        ember.style.left = Math.random() * 100 + '%';
+        ember.style.animationDelay = Math.random() * 3 + 's';
+        ember.style.animationDuration = (2 + Math.random() * 2) + 's';
+        container.appendChild(ember);
+    }` : ''}
+    ${currentElement === 'water' ? `
+    for (let i = 0; i < 15; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.style.left = Math.random() * 100 + '%';
+        bubble.style.width = (5 + Math.random() * 15) + 'px';
+        bubble.style.height = bubble.style.width;
+        bubble.style.animationDelay = Math.random() * 4 + 's';
+        container.appendChild(bubble);
+    }` : ''}
+    ${currentElement === 'alien' ? `
+    for (let i = 0; i < 12; i++) {
+        const spore = document.createElement('div');
+        spore.className = 'spore';
+        spore.style.left = Math.random() * 100 + '%';
+        spore.style.bottom = Math.random() * 50 + '%';
+        spore.style.animationDelay = Math.random() * 5 + 's';
+        container.appendChild(spore);
+    }` : ''}
+}
+
+document.addEventListener('DOMContentLoaded', initParticles);`;
+
+            document.getElementById('full-code').textContent = fullCode;
+            document.getElementById('html-code').textContent = htmlCode;
+            document.getElementById('css-code').textContent = cssCode;
+            document.getElementById('js-code').textContent = jsCode;
+        }
+
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.docs-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.docs-panel').forEach(p => p.classList.remove('active'));
+            
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}-panel`).classList.add('active');
+        }
+
+        // ============================================
+        // COPY CODE
+        // ============================================
+        function copyCode(elementId) {
+            const codeBlock = document.getElementById(elementId);
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                showToast('✓ Complete code copied to clipboard!');
+            });
+        }
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // ============================================
+        // 3D TILT EFFECT
+        // ============================================
+        const card = document.getElementById('previewCard');
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 25;
+            const rotateY = (centerX - x) / 25;
+            card.style.transform = `translateY(-15px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+        });
+    </script>
+</body>
+</html>
