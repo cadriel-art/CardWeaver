@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { insertCardSchema, cards } from './schema';
+import {
+  insertCardSchema,
+  updateCardSchema,
+  cardFilterSchema,
+  cards,
+} from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -19,6 +24,7 @@ export const api = {
     list: {
       method: 'GET' as const,
       path: '/api/cards',
+      query: cardFilterSchema.optional(),
       responses: {
         200: z.array(z.custom<typeof cards.$inferSelect>()),
       },
@@ -37,6 +43,24 @@ export const api = {
       path: '/api/cards/:id',
       responses: {
         200: z.custom<typeof cards.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/cards/:id',
+      input: updateCardSchema,
+      responses: {
+        200: z.custom<typeof cards.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    remove: {
+      method: 'DELETE' as const,
+      path: '/api/cards/:id',
+      responses: {
+        204: z.undefined(),
         404: errorSchemas.notFound,
       },
     },

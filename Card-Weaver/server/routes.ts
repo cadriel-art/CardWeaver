@@ -9,23 +9,39 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   app.get(api.cards.list.path, async (req, res) => {
-    const cards = await storage.getCards();
-    res.json(cards);
+    try {
+      const filters = parseCardFilters(req.query);
+      const cards = await storage.getCards(filters);
+      res.json(cards);
+    } catch (err) {
+      console.error("DB error in list:", err);
+      res.json([]);
+    }
   });
 
   app.get(api.cards.get.path, async (req, res) => {
-    const card = await storage.getCard(Number(req.params.id));
-    if (!card) {
-      return res.status(404).json({ message: "Card not found" });
+    try {
+      const card = await storage.getCard(Number(req.params.id));
+      if (!card) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json(card);
+    } catch (err) {
+      console.error("DB error in get:", err);
+      res.status(500).json({ message: "Database error" });
     }
-    res.json(card);
   });
 
   app.post(api.cards.create.path, async (req, res) => {
     try {
-      const input = api.cards.create.input.parse(req.body);
-      const card = await storage.createCard(input);
-      res.status(201).json(card);
+      const input = api.cards.create.input.parse(req.body) as any;
+      try {
+        const card = await storage.createCard(input as any);
+        res.status(201).json(card);
+      } catch (dbErr) {
+        console.error("DB error in create:", dbErr);
+        res.status(500).json({ message: "Database error" });
+      }
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({
@@ -62,10 +78,18 @@ export async function registerRoutes(
             chromatic: false,
             particles: true
           },
+          owner: "lorekeeper",
           width: 380,
           height: 480,
           borderRadius: 20,
-          fontFamily: 'Rajdhani'
+          fontFamily: 'Rajdhani',
+          background: null,
+          hover: null,
+          gradients: { type: "linear", angle: 0 },
+          shadows: { outer: true, inset: false, blur: 10, frameWidth: 4 },
+          layout: "vertical",
+          spacing: { padding: 30, gap: 12 },
+          tpl: false,
         });
 
         await storage.createCard({
@@ -87,10 +111,18 @@ export async function registerRoutes(
             chromatic: true,
             particles: true
           },
+          owner: "navigator",
           width: 380,
           height: 480,
           borderRadius: 20,
-          fontFamily: 'Rajdhani'
+          fontFamily: 'Rajdhani',
+          background: null,
+          hover: null,
+          gradients: { type: "linear", angle: 0 },
+          shadows: { outer: true, inset: false, blur: 10, frameWidth: 4 },
+          layout: "vertical",
+          spacing: { padding: 30, gap: 12 },
+          tpl: false,
         });
         console.log("Seeding complete.");
       }
@@ -99,5 +131,67 @@ export async function registerRoutes(
     }
   }, 2000);
 
+  app.patch(api.cards.update.path, async (req, res) => {
+    try {
+      const input = api.cards.update.input.parse(req.body) as any;
+      try {
+        const card = await storage.updateCard(Number(req.params.id), input as any);
+        if (!card) {
+          return res.status(404).json({ message: "Card not found" });
+        }
+        res.json(card);
+      } catch (dbErr) {
+        console.error("DB error in update:", dbErr);
+        res.status(500).json({ message: "Database error" });
+      }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.cards.remove.path, async (req, res) => {
+    try {
+      const deleted = await storage.deleteCard(Number(req.params.id));
+      if (!deleted) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.status(204).send();
+    } catch (err) {
+      console.error("DB error in delete:", err);
+      res.status(500).json({ message: "Database error" });
+    }
+  });
+
   return httpServer;
+}
+
+function parseCardFilters(query: Record<string, unknown>) {
+  const tagsParam = query.tags;
+  let tags: string[] | undefined;
+  if (Array.isArray(tagsParam)) {
+    tags = tagsParam.map(String);
+  } else if (typeof tagsParam === "string") {
+    tags = tagsParam.split(",").map((tag) => tag.trim()).filter(Boolean);
+  }
+
+  const rawFilters = {
+    element: typeof query.element === "string" ? query.element : undefined,
+    category: typeof query.category === "string" ? query.category : undefined,
+    search: typeof query.search === "string" ? query.search : undefined,
+    owner: typeof query.owner === "string" ? query.owner : undefined,
+    tags,
+  };
+
+  try {
+    return api.cards.list.query?.parse(rawFilters);
+  } catch (err) {
+    console.warn("Invalid filter params provided, ignoring filters:", err);
+    return undefined;
+  }
 }
